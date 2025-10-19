@@ -1,12 +1,13 @@
 import os
 import pytest
 from expense_tracker.db.db_client import DBClient
+from expense_tracker.config import Config
 
 
 class TestDBClient:
 
     def setup_method(self):
-        os.environ["DB_NAME"] = "test_expenses.db"
+        os.environ[Config.ENV_DB_NAME] = "test_expenses.db"
 
     def teardown_method(self):
         # the tuple returned by PRAGMA database_list has the format (seq, name, file)
@@ -21,12 +22,24 @@ class TestDBClient:
         assert len(tables) == 1
         assert "expenses" in tables
 
+    def test_add_db_extension_on_init_db(self):
+        os.environ[Config.ENV_DB_NAME] = "test_expenses"
+        DBClient.init_db()
+        connection = DBClient.get_connection()
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA database_list;")
+        db_list = cursor.fetchall()
+        assert len(db_list) == 1
+        db_file = db_list[0][2]
+        assert db_file.endswith(".db")
+
     def test_get_connection_should_raise_error_if_db_name_not_set(self):
-        del os.environ["DB_NAME"]
+        del os.environ[Config.ENV_DB_NAME]
         with pytest.raises(ValueError) as ex:
             DBClient.get_connection()
-        assert str(ex.value) == "DB_NAME environment variable is not set."
-        os.environ["DB_NAME"] = "test_expenses.db"
+        assert str(
+            ex.value) == f"{Config.ENV_DB_NAME} environment variable is not set."
+        os.environ[Config.ENV_DB_NAME] = "test_expenses.db"
 
     def test_add_expense(self):
         DBClient.init_db()

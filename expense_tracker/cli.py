@@ -1,19 +1,34 @@
+import os
+from typing import Optional
 from rich.text import Text
 from rich.console import Console
 from typing_extensions import Annotated
-import locale
 
 import typer
 from .utils import Utils
+from .config import Config
+from .db.db_client import DBClient
 
 app = typer.Typer()
 console = Console()
 
 
 @app.command()
-def init(name: Annotated[str, typer.Argument(help="Refers to the users' whose expenses are being tracked.")]
-         ):
-    pass
+def init(
+        name: Annotated[Optional[str], typer.Option(
+            help=f"Refers to the users' whose expenses are being tracked. Can be set through and environment variable {Config.ENV_DB_NAME}")] = None):
+    """
+    Initialize the expense tracker for a user.
+    """
+    if (name is not None):
+        os.environ[Config.ENV_DB_NAME] = name
+    try:
+        DBClient.init_db()
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)
+    console.print(
+        f"Expense tracker initialized for [bold blue]{name}[/bold blue].")
 
 
 @app.command()

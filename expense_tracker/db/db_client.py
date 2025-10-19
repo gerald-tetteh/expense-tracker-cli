@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from pathlib import Path
+from expense_tracker.config import Config
 
 TABLE_NAME = "expenses"
 
@@ -10,9 +11,12 @@ class DBClient:
     @staticmethod
     def get_connection() -> sqlite3.Connection:
         """Get a connection to the SQLite database."""
-        db_name = os.getenv("DB_NAME")
+        db_name = os.getenv(Config.ENV_DB_NAME)
         if db_name is None:
             raise ValueError("DB_NAME environment variable is not set.")
+        if not db_name.endswith(".db"):
+            db_name += ".db"
+            os.environ[Config.ENV_DB_NAME] = db_name
         db_path = Path(__file__).parent / db_name
         return sqlite3.connect(db_path)
 
