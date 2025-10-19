@@ -1,6 +1,7 @@
 import locale
 import platform
 
+
 class Utils:
     """Utility functions for the expense tracker application."""
 
@@ -16,7 +17,8 @@ class Utils:
             loc = locale.getlocale()
             if loc == (None, None):
                 if platform.system() == "Windows":
-                    locale.setlocale(locale.LC_ALL, "English_United States.1252")
+                    locale.setlocale(
+                        locale.LC_ALL, "English_United States.1252")
                 else:
                     locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
         except Exception:

@@ -1,13 +1,20 @@
+from rich.text import Text
+from rich.console import Console
+from typing_extensions import Annotated
 import locale
 
 import typer
-from.utils import Utils
-from typing_extensions import Annotated
-from rich.console import Console
-from rich.text import Text
+from .utils import Utils
 
 app = typer.Typer()
 console = Console()
+
+
+@app.command()
+def init(name: Annotated[str, typer.Argument(help="Refers to the users' whose expenses are being tracked.")]
+         ):
+    pass
+
 
 @app.command()
 def add(amount: Annotated[float, typer.Argument()], description: Annotated[str, typer.Argument()]):
@@ -21,6 +28,7 @@ def add(amount: Annotated[float, typer.Argument()], description: Annotated[str, 
     text.append(f" for ")
     text.append(f"{description}", style="italic yellow")
     console.print(text)
+
 
 @app.command()
 def list():
