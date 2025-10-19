@@ -22,7 +22,6 @@ class TestCli:
         result = self.runner.invoke(app, ["init", "--name", "test_user"])
         assert result.exit_code == 0
         assert "Expense tracker initialized for" in result.output
-        os.environ[Config.ENV_DB_NAME] = "test_expenses.db"
 
     def test_init_should_initialize_db_with_env_variable(self):
         result = self.runner.invoke(app, ["init"])
@@ -35,3 +34,18 @@ class TestCli:
         assert result.exit_code == 1
         assert "Error:" in result.output
         os.environ[Config.ENV_DB_NAME] = "test_expenses.db"
+
+    def test_add_should_add_expense(self):
+        self.runner.invoke(app, ["init"])
+        result = self.runner.invoke(
+            app, ["add", "50.0", "Groceries"])
+        assert result.exit_code == 0
+        assert "Added:" in result.output
+        assert "50.00" in result.output
+        assert "Groceries" in result.output
+
+    def test_add_should_handle_add_expense_error(self):
+        result = self.runner.invoke(
+            app, ["add", "50.0", "Groceries"])
+        assert result.exit_code == 1
+        assert "Error:" in result.output

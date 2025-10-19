@@ -2,6 +2,7 @@ import os
 import pytest
 from expense_tracker.db.db_client import DBClient
 from expense_tracker.config import Config
+from expense_tracker.models.exceptions import DBNotInitializedError
 
 
 class TestDBClient:
@@ -56,3 +57,15 @@ class TestDBClient:
                 "SELECT amount, description, date, category FROM expenses;")
             row = cursor.fetchone()
             assert row == (50.0, "Groceries", "2024-10-01T12:00:00", "Food")
+
+    def test_add_expense_should_raise_error_if_db_not_initialized(self):
+        expense_data = {
+            "amount": 50.0,
+            "description": "Groceries",
+            "date": "2024-10-01T12:00:00",
+            "category": "Food"
+        }
+        with pytest.raises(DBNotInitializedError) as ex:
+            DBClient.add(expense_data)
+        assert "Database is not initialized. Please run the init command." == str(
+            ex.value)

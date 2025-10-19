@@ -8,9 +8,20 @@ import typer
 from .utils import Utils
 from .config import Config
 from .db.db_client import DBClient
+from .models.expense import Expense
 
 app = typer.Typer()
 console = Console()
+
+
+@app.callback()
+def main(name: Annotated[Optional[str], typer.Option(
+        help=f"Refers to the users' whose expenses are being tracked. Can be set through and environment variable {Config.ENV_DB_NAME}")] = None):
+    """
+    Expense Tracker CLI Application.
+    """
+    if (name is not None):
+        os.environ[Config.ENV_DB_NAME] = name
 
 
 @app.command()
@@ -28,7 +39,7 @@ def init(
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise typer.Exit(code=1)
     console.print(
-        f"Expense tracker initialized for [bold blue]{name}[/bold blue].")
+        f"Expense tracker initialized for [bold blue]{os.environ[Config.ENV_DB_NAME]}[/bold blue].")
 
 
 @app.command()
@@ -37,6 +48,12 @@ def add(amount: Annotated[float, typer.Argument()], description: Annotated[str, 
     Add a new expense.
     """
     # logic to add expense
+    try:
+        expense = Expense(amount, description)
+        DBClient.add(expense.to_dict())
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)
     text = Text()
     text.append("Added: ")
     text.append(f"{Utils.format_currency(amount)}", style="bold green")

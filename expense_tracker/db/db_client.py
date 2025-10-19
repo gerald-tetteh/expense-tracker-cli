@@ -2,6 +2,7 @@ import sqlite3
 import os
 from pathlib import Path
 from expense_tracker.config import Config
+from expense_tracker.models.exceptions import DBNotInitializedError
 
 TABLE_NAME = "expenses"
 
@@ -51,8 +52,13 @@ class DBClient:
         """Add a new expense entry to the database."""
         with DBClient.get_connection() as connection:
             cursor = connection.cursor()
-            cursor.execute(f'''
-                INSERT INTO {TABLE_NAME} (amount, description, date, category)
-                VALUES (?, ?, ?, ?)
-            ''', (data["amount"], data["description"], data["date"], data["category"]))
-            connection.commit()
+            try:
+                cursor.execute(f'''
+                    INSERT INTO {TABLE_NAME} (amount, description, date, category)
+                    VALUES (?, ?, ?, ?)
+                ''', (data["amount"], data["description"], data["date"], data["category"]))
+                connection.commit()
+            except sqlite3.OperationalError as _:
+                connection.rollback()
+                raise DBNotInitializedError(
+                    "Database is not initialized. Please run the init command.")
