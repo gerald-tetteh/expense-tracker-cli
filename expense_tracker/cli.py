@@ -63,9 +63,25 @@ def add(amount: Annotated[float, typer.Argument()], description: Annotated[str, 
 
 
 @app.command()
-def list():
+def list(
+    month: Annotated[str, typer.Option(help="Month of the year. eg: Jan, Feb.")],
+    year: Annotated[str, typer.Option(help="The year in the format YYYY. eg: 2025")],
+    page: Annotated[int, typer.Option(
+        help="The page number for paginated results. Defaults to 1")] = 1,
+    limit: Annotated[int, typer.Option(
+        help="The number of results to return. Defaults to 20")] = 20
+):
     """
     List all expenses.
     """
-    # logic to list expenses
-    console.print("Listing all expenses...")
+    try:
+        monthOrdinal = Utils.month_text_to_ordinal(month)
+        expenses = DBClient.list_expenses(monthOrdinal, year, page, limit)
+        output = "\n".join([str(expense) for expense in expenses])
+
+        console.print(
+            f"Expenses for [bold yellow]{month}, {year}[/bold yellow]")
+        typer.echo(output)
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)

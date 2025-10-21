@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typer.testing import CliRunner
 from expense_tracker.cli import app
 from expense_tracker.config import Config
@@ -49,3 +50,71 @@ class TestCli:
             app, ["add", "50.0", "Groceries"])
         assert result.exit_code == 1
         assert "Error:" in result.output
+
+    def test_list_expenses(self):
+        self.runner.invoke(app, ["init"])
+        expenses = [
+            {
+                "id": 1,
+                "amount": 50.0,
+                "description": "Groceries",
+                "date": "2024-10-01T12:00:00",
+                "category": "Food"
+            },
+            {
+                "id": 2,
+                "amount": 62.3,
+                "description": "Games",
+                "date": "2024-10-02T12:00:00",
+                "category": "Entertainment"
+            },
+            {
+                "id": 3,
+                "amount": 162.3,
+                "description": "Bread",
+                "date": "2024-07-02T12:00:00",
+                "category": "Food"
+            }
+        ]
+        for expense in expenses:
+            DBClient.add(expense)
+        result = self.runner.invoke(
+            app, ["list", "--month", "Oct", "--year", "2024"])
+        lines = result.output.splitlines()
+        assert len(lines) == 3
+        assert lines[0] == "Expenses for Oct, 2024"
+        assert "2024-10-02T12:00:00" in lines[2]
+
+    def test_list_expense_with_pagination(self):
+        self.runner.invoke(app, ["init"])
+        expenses = [
+            {
+                "id": 1,
+                "amount": 50.0,
+                "description": "Groceries",
+                "date": "2024-10-01T12:00:00",
+                "category": "Food"
+            },
+            {
+                "id": 2,
+                "amount": 62.3,
+                "description": "Games",
+                "date": "2024-10-02T12:00:00",
+                "category": "Entertainment"
+            },
+            {
+                "id": 3,
+                "amount": 162.3,
+                "description": "Bread",
+                "date": "2024-07-02T12:00:00",
+                "category": "Food"
+            }
+        ]
+        for expense in expenses:
+            DBClient.add(expense)
+        result = self.runner.invoke(
+            app, ["list", "--month", "Oct", "--year", "2024", "--page", "2", "--limit", "1"])
+        lines = result.output.splitlines()
+        assert len(lines) == 2
+        assert lines[0] == "Expenses for Oct, 2024"
+        assert "2024-10-02T12:00:00" in lines[1]

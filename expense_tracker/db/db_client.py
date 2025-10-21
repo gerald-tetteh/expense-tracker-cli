@@ -1,8 +1,10 @@
 import sqlite3
 import os
 from pathlib import Path
+from datetime import datetime
 from expense_tracker.config import Config
 from expense_tracker.models.exceptions import DBNotInitializedError
+from expense_tracker.models.expense import Expense
 
 TABLE_NAME = "expenses"
 
@@ -62,3 +64,27 @@ class DBClient:
                 connection.rollback()
                 raise DBNotInitializedError(
                     "Database is not initialized. Please run the init command.")
+
+    @staticmethod
+    def list_expenses(month: str, year: str, page: int = 1, limit: int = 20) -> list[Expense]:
+        """List recent expenses."""
+        with DBClient.get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                f'''
+                SELECT id, amount, description, date, category FROM {TABLE_NAME}
+                WHERE strftime('%m', date) = ? AND strftime('%Y', date) = ?
+                ORDER BY date
+                LIMIT ? OFFSET ?
+                ''', (month, year, limit, (page - 1) * limit)
+            )
+            return [
+                Expense(
+                    id=row[0],
+                    amount=row[1],
+                    description=row[2],
+                    date=datetime.fromisoformat(row[3]),
+                    category=row[4],
+                )
+                for row in cursor.fetchall()
+            ]

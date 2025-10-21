@@ -8,6 +8,29 @@ from expense_tracker.models.exceptions import DBNotInitializedError
 class TestDBClient:
 
     def setup_method(self):
+        self.expenses = [
+            {
+                "id": 1,
+                "amount": 50.0,
+                "description": "Groceries",
+                "date": "2024-10-01T12:00:00",
+                "category": "Food"
+            },
+            {
+                "id": 2,
+                "amount": 62.3,
+                "description": "Games",
+                "date": "2024-10-02T12:00:00",
+                "category": "Entertainment"
+            },
+            {
+                "id": 3,
+                "amount": 162.3,
+                "description": "Bread",
+                "date": "2024-07-02T12:00:00",
+                "category": "Food"
+            }
+        ]
         os.environ[Config.ENV_DB_NAME] = "test_expenses.db"
 
     def teardown_method(self):
@@ -69,3 +92,21 @@ class TestDBClient:
             DBClient.add(expense_data)
         assert "Database is not initialized. Please run the init command." == str(
             ex.value)
+
+    def test_list_expenses(self):
+        DBClient.init_db()
+        for expense in self.expenses:
+            DBClient.add(expense)
+        returned_expenses = DBClient.list_expenses("10", "2024")
+        assert len(returned_expenses) == 2
+        for (returned_expense, expected_expense) in zip(returned_expenses, self.expenses[0:2]):
+            assert returned_expense.to_dict() == expected_expense
+
+    def test_list_expense_should_paginate_expenses(self):
+        DBClient.init_db()
+        for expense in self.expenses:
+            DBClient.add(expense)
+        returned_expenses = DBClient.list_expenses("10", "2024", 1, 1)
+        assert len(returned_expenses) == 1
+        returned_expenses = DBClient.list_expenses("10", "2024", 2, 3)
+        assert len(returned_expenses) == 0
