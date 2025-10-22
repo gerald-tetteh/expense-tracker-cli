@@ -18,6 +18,126 @@ class Utils:
         "Nov": "11",
         "Dec": "12"
     }
+    categories = {
+        "Food & Drinks": [
+            "coffee",
+            "restaurant",
+            "meal",
+            "lunch",
+            "dinner",
+            "breakfast",
+            "snack",
+            "groceries",
+            "supermarket",
+            "bar",
+            "cafe",
+            "beer",
+            "wine"
+        ],
+        "Transport": [
+            "uber",
+            "lyft",
+            "taxi",
+            "bus",
+            "train",
+            "metro",
+            "flight",
+            "airline",
+            "gas",
+            "fuel",
+            "parking",
+            "toll"
+        ],
+        "Housing & Utilities": [
+            "rent",
+            "mortgage",
+            "electricity",
+            "water",
+            "internet",
+            "wifi",
+            "cable",
+            "utility",
+            "maintenance",
+            "repair"
+        ],
+        "Entertainment": [
+            "movie",
+            "cinema",
+            "netflix",
+            "spotify",
+            "hbo",
+            "concert",
+            "game",
+            "ticket",
+            "streaming",
+            "book",
+            "music"
+        ],
+        "Shopping": [
+            "amazon",
+            "clothes",
+            "electronics",
+            "shoes",
+            "furniture",
+            "mall",
+            "store",
+            "purchase",
+            "gift"
+        ],
+        "Health & Fitness": [
+            "gym",
+            "fitness",
+            "doctor",
+            "medicine",
+            "pharmacy",
+            "dentist",
+            "hospital",
+            "yoga",
+            "vitamin",
+            "therapy"
+        ],
+        "Education": [
+            "course",
+            "tuition",
+            "book",
+            "online class",
+            "udemy",
+            "coursera",
+            "university",
+            "school",
+            "training"
+        ],
+        "Finance & Fees": [
+            "bank",
+            "fee",
+            "insurance",
+            "tax",
+            "loan",
+            "credit",
+            "interest",
+            "atm",
+            "transfer"
+        ],
+        "Personal Care": [
+            "haircut",
+            "salon",
+            "barber",
+            "spa",
+            "cosmetics",
+            "beauty",
+            "makeup",
+            "skincare"
+        ],
+        "Miscellaneous": [
+            "donation",
+            "gift",
+            "charity",
+            "subscription",
+            "membership",
+            "misc",
+            "other"
+        ]
+    }
 
     @staticmethod
     def format_currency(amount: float) -> str:
@@ -58,3 +178,17 @@ class Utils:
             raise ValueError(
                 f"Invalid month. Available options: {", ".join(Utils.monthOrdinals.keys())}")
         return Utils.monthOrdinals[month]
+
+    @staticmethod
+    def auto_categorise(description: str) -> str:
+        """
+        Determine category of expense base on the description
+
+        Args:
+            description (str): the expense description
+        """
+        description_lower = description.lower()
+        for key, words in Utils.categories.items():
+            if any(word in description_lower for word in words):
+                return key
+        return "Other"

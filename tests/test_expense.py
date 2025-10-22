@@ -27,7 +27,7 @@ class TestExpense:
         assert expense.category == "Bills"
         assert expense.date == current_date
 
-    def test_should_have_default_category_and_date(self):
+    def test_should_populate_category_and_date(self):
         expense = Expense(20.0, "Snacks")
-        assert expense.category == "None"
+        assert expense.category is not None
         assert isinstance(expense.date, datetime)

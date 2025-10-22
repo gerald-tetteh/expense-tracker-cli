@@ -85,3 +85,8 @@ def list(
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise typer.Exit(code=1)
+
+
+@app.command()
+def summary():
+    pass

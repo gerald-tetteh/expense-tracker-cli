@@ -10,14 +10,15 @@ class Expense:
             amount: float,
             description: str,
             date: datetime = datetime.now(),
-            category: str = "None",
+            category: str | None = None,
             id: int | None = None
     ):
         self.id = id
         self.amount = amount
         self.description = description
         self.date = date
-        self.category = category  # TODO: Implement category assignment logic
+        self.category = category if category is not None else Utils.auto_categorise(
+            description)
 
     def __repr__(self):
         return f"{self.id}. {Utils.format_currency(self.amount)} \
