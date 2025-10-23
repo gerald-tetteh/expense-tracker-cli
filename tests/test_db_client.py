@@ -3,6 +3,7 @@ import pytest
 from expense_tracker.db.db_client import DBClient
 from expense_tracker.config import Config
 from expense_tracker.models.exceptions import DBNotInitializedError
+from expense_tracker.models.expense_summary import ExpenseSummary
 
 
 class TestDBClient:
@@ -110,3 +111,18 @@ class TestDBClient:
         assert len(returned_expenses) == 1
         returned_expenses = DBClient.list_expenses("10", "2024", 2, 3)
         assert len(returned_expenses) == 0
+
+    def test_summary(self):
+        DBClient.init_db()
+        for expense in self.expenses:
+            DBClient.add(expense)
+        summary = DBClient.summary("10", "2024")
+        assert len(summary) == 2
+        assert summary[0] == ExpenseSummary("Entertainment", 62.3)
+        assert summary[1] == ExpenseSummary("Food", 50.0)
+
+    def test_summary_should_throw_exception_if_db_not_initialized(self):
+        with pytest.raises(DBNotInitializedError) as ex:
+            DBClient.summary("10", "2024")
+        assert "Database is not initialized. Please run the init command." == str(
+            ex.value)

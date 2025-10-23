@@ -2,6 +2,8 @@ import os
 from typing import Optional
 from rich.text import Text
 from rich.console import Console
+from rich.table import Table, Column
+from rich import box
 from typing_extensions import Annotated
 
 import typer
@@ -88,5 +90,41 @@ def list(
 
 
 @app.command()
-def summary():
-    pass
+def summary(
+    month: Annotated[str, typer.Option(help="Month of the year. eg: Jan, Feb.")],
+    year: Annotated[str, typer.Option(
+        help="The year in the format YYYY. eg: 2025")]
+):
+    """
+    Display a summary of the expenses based on the month and year
+    """
+    try:
+        monthOrdinal = Utils.month_text_to_ordinal(month)
+        summary = DBClient.summary(monthOrdinal, year)
+        if len(summary) == 0:
+            console.print("No transactions this month.")
+            return
+        total_spent = sum([row.amount for row in summary])
+        table_min_width = 70
+        table = Table(
+            Column(header="Category", justify="left"),
+            Column(header="Total", justify="left"),
+            Column(footer="Total"),
+            Column(footer=f"{Utils.format_currency(total_spent)}"),
+            title=f"{Utils.month_short_to_full(month)} Summary",
+            title_style="bold",
+            title_justify="left",
+            show_lines=True,
+            min_width=table_min_width,
+            box=box.SIMPLE,
+            show_footer=True,
+        )
+        for row in summary:
+            bar = "█" * int((row.amount / total_spent) * table_min_width)
+            table.add_row(
+                row.category, f"{bar} {Utils.format_currency(row.amount)}")
+        console.print()
+        console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)

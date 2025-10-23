@@ -5,11 +5,13 @@ from datetime import datetime
 from expense_tracker.config import Config
 from expense_tracker.models.exceptions import DBNotInitializedError
 from expense_tracker.models.expense import Expense
+from expense_tracker.models.expense_summary import ExpenseSummary
 
 TABLE_NAME = "expenses"
 
 
 class DBClient:
+    """Client to manage operations with database"""
 
     @staticmethod
     def get_connection() -> sqlite3.Connection:
@@ -88,3 +90,23 @@ class DBClient:
                 )
                 for row in cursor.fetchall()
             ]
+
+    @staticmethod
+    def summary(month: str, year: str) -> list[ExpenseSummary]:
+        """Create summary of expenses"""
+        with DBClient.get_connection() as connection:
+            cursor = connection.cursor()
+            try:
+                cursor.execute(
+                    f'''
+                    SELECT category, SUM(amount)
+                    FROM {TABLE_NAME}
+                    WHERE strftime('%m', date) = ? AND strftime('%Y', date) = ?
+                    GROUP BY category
+                    ORDER BY category
+                    ''', (month, year)
+                )
+                return [ExpenseSummary(row[0], row[1]) for row in cursor.fetchall()]
+            except sqlite3.OperationalError as _:
+                raise DBNotInitializedError(
+                    "Database is not initialized. Please run the init command.")

@@ -4,7 +4,7 @@ import platform
 
 class Utils:
     """Utility functions for the expense tracker application."""
-    monthOrdinals = {
+    month_ordinals = {
         "Jan": "1",
         "Feb": "2",
         "Mar": "3",
@@ -17,6 +17,20 @@ class Utils:
         "Oct": "10",
         "Nov": "11",
         "Dec": "12"
+    }
+    short_to_full_month_map = {
+        "Jan": "January",
+        "Feb": "February",
+        "Mar": "March",
+        "Apr": "April",
+        "May": "May",
+        "Jun": "June",
+        "Jul": "July",
+        "Aug": "August",
+        "Sep": "September",
+        "Oct": "October",
+        "Nov": "November",
+        "Dec": "December"
     }
     categories = {
         "Food & Drinks": [
@@ -166,6 +180,19 @@ class Utils:
             return f"${amount:,.2f}"
 
     @staticmethod
+    def month_short_to_full(month: str) -> str:
+        """
+        Returns the full month text.
+
+        Args:
+            month (str): Short form of the month
+        """
+        if month not in Utils.short_to_full_month_map:
+            raise ValueError(
+                f"Invalid month. Available options: {", ".join(Utils.month_ordinals.keys())}")
+        return Utils.short_to_full_month_map[month]
+
+    @staticmethod
     def month_text_to_ordinal(month: str) -> str:
         """
         Returns the ordinal for the months of the year.
@@ -174,10 +201,10 @@ class Utils:
         Args:
             month (str): Short form of the month
         """
-        if month not in Utils.monthOrdinals:
+        if month not in Utils.month_ordinals:
             raise ValueError(
-                f"Invalid month. Available options: {", ".join(Utils.monthOrdinals.keys())}")
-        return Utils.monthOrdinals[month]
+                f"Invalid month. Available options: {", ".join(Utils.month_ordinals.keys())}")
+        return Utils.month_ordinals[month]
 
     @staticmethod
     def auto_categorise(description: str) -> str:
