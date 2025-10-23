@@ -31,3 +31,10 @@ class TestExpense:
         expense = Expense(20.0, "Snacks")
         assert expense.category is not None
         assert isinstance(expense.date, datetime)
+
+    def test_should_convert_to_csv(self):
+        current_date = datetime.now()
+        expense = Expense(50.0, "Groceries",
+                          date=current_date, category="Food", id=1)
+        expense_csv = expense.to_csv()
+        assert f"1,50.0,Groceries,Food,{current_date.isoformat()}"

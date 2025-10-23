@@ -34,6 +34,10 @@ for {self.description} on {self.date.isoformat()}. [{self.category}]"
             "category": self.category
         }
 
+    def to_csv(self):
+        """Convert Expense object to CSV format"""
+        return f"{self.id},{self.amount},{self.description},{self.category},{self.date.isoformat()}"
+
     @staticmethod
     def from_dict(data: dict[str, any]):
         """Create an Expense object from a dictionary representation."""

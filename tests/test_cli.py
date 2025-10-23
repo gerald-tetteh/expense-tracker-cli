@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from typer.testing import CliRunner
 from expense_tracker.cli import app
@@ -106,3 +107,29 @@ class TestCli:
         assert "Food" in result.output
         assert "Entertainment" in result.output
         assert "112.3" in result.output
+
+    def test_export_csv(self):
+        self.runner.invoke(app, ["init"])
+        for expense in self.expenses:
+            DBClient.add(expense)
+        with open("export_test.txt", "w+") as file:
+            result = self.runner.invoke(
+                app, ["export", "--output", "export_test.txt", "--format", "csv"])
+            assert "Exported expenses to: export_test.txt" in result.output
+            lines = file.readlines()
+            assert len(lines) == 4
+        os.remove("export_test.txt")
+
+    def test_export_json(self):
+        self.runner.invoke(app, ["init"])
+        for expense in self.expenses:
+            DBClient.add(expense)
+        with open("export_test.json", "w+") as file:
+            result = self.runner.invoke(
+                app, ["export", "--output", "export_test.json", "--format", "json"])
+            assert "Exported expenses to: export_test.json" in result.output
+            lines = file.readlines()
+            assert len(lines) == 1
+            parsed_expenses: list[dict[str, any]] = json.loads(lines[0])
+            assert len(parsed_expenses) == 3
+        os.remove("export_test.json")

@@ -126,3 +126,17 @@ class TestDBClient:
             DBClient.summary("10", "2024")
         assert "Database is not initialized. Please run the init command." == str(
             ex.value)
+
+    def test_get_all(self):
+        DBClient.init_db()
+        for expense in self.expenses:
+            DBClient.add(expense)
+        result = DBClient.get_all()
+        assert len(result) == 3
+        assert result[0].to_dict() == self.expenses[2]
+
+    def test_get_all_should_throw_exception_if_db_not_initialized(self):
+        with pytest.raises(DBNotInitializedError) as ex:
+            DBClient.get_all()
+        assert "Database is not initialized. Please run the init command." == str(
+            ex.value)

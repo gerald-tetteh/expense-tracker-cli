@@ -52,6 +52,28 @@ class DBClient:
             return tables
 
     @staticmethod
+    def get_all() -> list[Expense]:
+        """Retrieve all row in the database"""
+        with DBClient.get_connection() as connection:
+            cursor = connection.cursor()
+            try:
+                cursor.execute(
+                    f"SELECT id, amount, description, date, category FROM {TABLE_NAME} ORDER BY date")
+                return [
+                    Expense(
+                        id=row[0],
+                        amount=row[1],
+                        description=row[2],
+                        date=datetime.fromisoformat(row[3]),
+                        category=row[4]
+                    )
+                    for row in cursor.fetchall()
+                ]
+            except sqlite3.OperationalError as _:
+                raise DBNotInitializedError(
+                    "Database is not initialized. Please run the init command.")
+
+    @staticmethod
     def add(data: dict[str, any]):
         """Add a new expense entry to the database."""
         with DBClient.get_connection() as connection:

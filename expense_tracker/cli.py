@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Optional
 from rich.text import Text
 from rich.console import Console
@@ -11,6 +12,7 @@ from .utils import Utils
 from .config import Config
 from .db.db_client import DBClient
 from .models.expense import Expense
+from .models.output_format import OutputFormat
 
 app = typer.Typer()
 console = Console()
@@ -125,6 +127,37 @@ def summary(
                 row.category, f"{bar} {Utils.format_currency(row.amount)}")
         console.print()
         console.print(table)
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def export(
+    output: Annotated[typer.FileTextWrite, typer.Option()],
+    _format: Annotated[
+        OutputFormat,
+        typer.Option("--format", case_sensitive=False)
+    ] = OutputFormat.CSV
+):
+    """Export recorded expenses to a file"""
+    try:
+        expenses = DBClient.get_all()
+        match _format:
+            case OutputFormat.CSV:
+                expenses_csv_format = [
+                    f"{expense.to_csv()}\n"
+                    for expense in expenses
+                ]
+                output.write("ID,Amount,Description,Category,Date\n")
+                output.writelines(expenses_csv_format)
+            case OutputFormat.JSON:
+                expenses_dict_format = [expense.to_dict()
+                                        for expense in expenses]
+                expenses_json = json.dumps(expenses_dict_format)
+                output.write(expenses_json)
+        console.print(
+            f"Exported expenses to: [bold yellow]{output.name}[/bold yellow]")
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise typer.Exit(code=1)
