@@ -1,5 +1,6 @@
 from datetime import datetime
 from csv import DictReader
+import json
 
 from expense_tracker.utils import Utils
 from .exceptions import InvalidImportFileError
@@ -44,7 +45,9 @@ for {self.description} on {self.date.isoformat()}. [{self.category}]"
     @staticmethod
     def from_dict(data: dict[str, any]):
         """Create an Expense object from a dictionary representation."""
-        return Expense(data["amount"], data["description"], data["date"], data["category"], data.get("id"))
+        date = data["date"] if isinstance(
+            data["date"], datetime) else datetime.fromisoformat(data["date"])
+        return Expense(data["amount"], data["description"], date, data["category"], data.get("id"))
 
     @staticmethod
     def parse_csv(file: str):
@@ -69,6 +72,22 @@ for {self.description} on {self.date.isoformat()}. [{self.category}]"
         except KeyError:
             raise InvalidImportFileError(
                 "Some column headings are malformed. The first row should contain the headings.")
+        except FileNotFoundError:
+            raise InvalidImportFileError("Import file does not exist")
+        except Exception:
+            raise RuntimeError("Could not parse file")
+
+    @staticmethod
+    def parse_json(file: str):
+        """Parse expenses from a json file"""
+        try:
+            with open(file, "r") as json_file:
+                result = json.loads(json_file.read())
+                if isinstance(result, list):
+                    return [Expense.from_dict(obj) for obj in result]
+                return [Expense.from_dict(result)]
+        except json.JSONDecodeError:
+            raise InvalidImportFileError("File does not contain valid json")
         except FileNotFoundError:
             raise InvalidImportFileError("Import file does not exist")
         except Exception:

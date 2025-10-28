@@ -172,15 +172,15 @@ def import_expenses(
     ] = FileFormat.CSV
 ):
     """Import expenses from a file. Supports CSV and JSON"""
-    imported_count = 0
+    expenses = []
     try:
         match _format:
             case FileFormat.CSV:
                 expenses = Expense.parse_csv(file)
-                imported_count = len(expenses)
-                DBClient.add_many(expenses)
             case FileFormat.JSON:
-                pass
+                expenses = Expense.parse_json(file)
+        imported_count = len(expenses)
+        DBClient.add_many(expenses)
         console.print(
             f"Imported {imported_count} expenses from: [bold yellow]{file}[/bold yellow]")
     except Exception as e:

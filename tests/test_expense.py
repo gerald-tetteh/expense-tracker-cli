@@ -1,4 +1,5 @@
 import os
+import json
 
 import pytest
 
@@ -8,7 +9,7 @@ from datetime import datetime
 
 
 class TestExpense:
-    IMPORT_FILE = "test_parse_csv.txt"
+    IMPORT_FILE = "test_parse"
 
     def teardown_method(self):
         if os.path.exists(self.IMPORT_FILE):
@@ -48,7 +49,7 @@ class TestExpense:
         expense = Expense(50.0, "Groceries",
                           date=current_date, category="Food", id=1)
         expense_csv = expense.to_csv()
-        assert f"1,50.0,Groceries,Food,{current_date.isoformat()}"
+        assert f"1,50.0,Groceries,Food,{current_date.isoformat()}" == expense_csv
 
     def test_parse_csv(self):
         if os.path.exists(self.IMPORT_FILE):
@@ -102,3 +103,54 @@ class TestExpense:
         with pytest.raises(InvalidImportFileError) as ex:
             Expense.parse_csv(self.IMPORT_FILE)
         assert "Import file does not exist" in str(ex.value)
+
+    def test_parse_json_list(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+        with open(self.IMPORT_FILE, "x") as file:
+            current_date = datetime.now()
+            expense = {
+                "id": None,
+                "amount": 75.0,
+                "description": "Utilities",
+                "date": current_date.isoformat(),
+                "category": "Bills"
+            }
+            file.write(json.dumps([expense]))
+        expenses = Expense.parse_json(self.IMPORT_FILE)
+        assert isinstance(expenses, list)
+        assert len(expenses) == 1
+        assert expenses[0].to_dict() == expense
+
+    def test_parse_json_single(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+        with open(self.IMPORT_FILE, "x") as file:
+            current_date = datetime.now()
+            expense = {
+                "id": None,
+                "amount": 75.0,
+                "description": "Utilities",
+                "date": current_date.isoformat(),
+                "category": "Bills"
+            }
+            file.write(json.dumps(expense))
+        expenses = Expense.parse_json(self.IMPORT_FILE)
+        assert isinstance(expenses, list)
+        assert len(expenses) == 1
+        assert expenses[0].to_dict() == expense
+
+    def test_parse_json_should_throw_exception_on_missing_file(self):
+        with pytest.raises(InvalidImportFileError) as ex:
+            Expense.parse_json(self.IMPORT_FILE)
+        assert "Import file does not exist" in str(ex.value)
+
+    def test_parse_json_should_throw_exception_on_invalid_json(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+        with open(self.IMPORT_FILE, "x") as file:
+            file.write(
+                '{"amount": 75"description": "This is a test","date": "2025-06-12T12:00:00","category": "Food"}')
+        with pytest.raises(InvalidImportFileError) as ex:
+            Expense.parse_json(self.IMPORT_FILE)
+        assert "File does not contain valid json" in str(ex.value)

@@ -1,6 +1,5 @@
 import os
 import json
-from datetime import datetime
 from typer.testing import CliRunner
 from expense_tracker.cli import app
 from expense_tracker.config import Config
@@ -152,4 +151,18 @@ class TestCli:
         expenses = DBClient.get_all()
         assert len(expenses) == 4
         assert f"Imported 4 expenses from: {import_file}" in result.output
+        os.remove(import_file)
+
+    def test_import_expense_json(self):
+        import_file = "import_json_test.json"
+        self.runner.invoke(app, ["init"])
+        if os.path.exists(import_file):
+            os.remove(import_file)
+        with open(import_file, "x") as file:
+            file.write(json.dumps(self.expenses))
+        result = self.runner.invoke(
+            app, ["import", "--file", import_file, "--format", "json"])
+        expenses = DBClient.get_all()
+        assert len(expenses) == 3
+        assert f"Imported 3 expenses from: {import_file}" in result.output
         os.remove(import_file)
