@@ -90,6 +90,27 @@ class DBClient:
                     "Database is not initialized. Please run the init command.")
 
     @staticmethod
+    def add_many(expenses: list[Expense]):
+        """Inserts many expenses into the DB"""
+        with DBClient.get_connection() as connection:
+            cursor = connection.cursor()
+            try:
+                insert_tuples = [
+                    (expense.amount, expense.description,
+                     expense.date.isoformat(), expense.category)
+                    for expense in expenses
+                ]
+                cursor.executemany(f'''
+                INSERT INTO {TABLE_NAME} (amount, description, date, category)
+                VALUES (?, ?, ?, ?)
+                ''', insert_tuples)
+                connection.commit()
+            except sqlite3.OperationalError as _:
+                connection.rollback()
+                raise DBNotInitializedError(
+                    "Database is not initialized. Please run the init command.")
+
+    @staticmethod
     def list_expenses(month: str, year: str, page: int = 1, limit: int = 20) -> list[Expense]:
         """List recent expenses."""
         with DBClient.get_connection() as connection:

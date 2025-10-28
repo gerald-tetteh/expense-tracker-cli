@@ -1,9 +1,11 @@
 import os
 import pytest
+from datetime import datetime
 from expense_tracker.db.db_client import DBClient
 from expense_tracker.config import Config
 from expense_tracker.models.exceptions import DBNotInitializedError
 from expense_tracker.models.expense_summary import ExpenseSummary
+from expense_tracker.models.expense import Expense
 
 
 class TestDBClient:
@@ -138,5 +140,29 @@ class TestDBClient:
     def test_get_all_should_throw_exception_if_db_not_initialized(self):
         with pytest.raises(DBNotInitializedError) as ex:
             DBClient.get_all()
+        assert "Database is not initialized. Please run the init command." == str(
+            ex.value)
+
+    def test_add_many(self):
+        DBClient.init_db()
+        expenses = [
+            Expense(
+                amount=expense["amount"],
+                description=expense["description"],
+                category=expense["category"],
+                date=datetime.fromisoformat(expense["date"])
+            )
+            for expense in self.expenses
+        ]
+        DBClient.add_many(expenses)
+        with DBClient.get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT * FROM expenses")
+            result = cursor.fetchall()
+            assert len(result) == 3
+
+    def test_add_many_should_throw_exception_if_db_not_initialized(self):
+        with pytest.raises(DBNotInitializedError) as ex:
+            DBClient.add_many([])
         assert "Database is not initialized. Please run the init command." == str(
             ex.value)

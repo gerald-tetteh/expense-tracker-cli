@@ -1,5 +1,8 @@
 from datetime import datetime
+from csv import DictReader
+
 from expense_tracker.utils import Utils
+from .exceptions import InvalidImportFileError
 
 
 class Expense:
@@ -42,3 +45,31 @@ for {self.description} on {self.date.isoformat()}. [{self.category}]"
     def from_dict(data: dict[str, any]):
         """Create an Expense object from a dictionary representation."""
         return Expense(data["amount"], data["description"], data["date"], data["category"], data.get("id"))
+
+    @staticmethod
+    def parse_csv(file: str):
+        """Parse expenses from csv file."""
+        try:
+            with open(file, "r") as csv_file:
+                reader = DictReader(csv_file)
+                reader.fieldnames = [name.lower()
+                                     for name in reader.fieldnames]
+                return [
+                    Expense(
+                        amount=float(row["amount"]),
+                        category=row["category"],
+                        date=datetime.fromisoformat(row["date"]),
+                        description=row["description"],
+                    )
+                    for row in reader
+                ]
+        except ValueError:
+            raise InvalidImportFileError(
+                "Some fields may not be of the right type. 'amount' should be a number and 'date' is in the ISO format.")
+        except KeyError:
+            raise InvalidImportFileError(
+                "Some column headings are malformed. The first row should contain the headings.")
+        except FileNotFoundError:
+            raise InvalidImportFileError("Import file does not exist")
+        except Exception:
+            raise RuntimeError("Could not parse file")

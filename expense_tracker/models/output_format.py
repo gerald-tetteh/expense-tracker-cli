@@ -1,6 +1,6 @@
 from enum import Enum
 
 
-class OutputFormat(str, Enum):
+class FileFormat(str, Enum):
     CSV = "csv"
     JSON = "json"

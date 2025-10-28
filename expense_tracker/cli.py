@@ -12,7 +12,7 @@ from .utils import Utils
 from .config import Config
 from .db.db_client import DBClient
 from .models.expense import Expense
-from .models.output_format import OutputFormat
+from .models.output_format import FileFormat
 
 app = typer.Typer()
 console = Console()
@@ -136,28 +136,53 @@ def summary(
 def export(
     output: Annotated[typer.FileTextWrite, typer.Option()],
     _format: Annotated[
-        OutputFormat,
+        FileFormat,
         typer.Option("--format", case_sensitive=False)
-    ] = OutputFormat.CSV
+    ] = FileFormat.CSV
 ):
     """Export recorded expenses to a file"""
     try:
         expenses = DBClient.get_all()
         match _format:
-            case OutputFormat.CSV:
+            case FileFormat.CSV:
                 expenses_csv_format = [
                     f"{expense.to_csv()}\n"
                     for expense in expenses
                 ]
                 output.write("ID,Amount,Description,Category,Date\n")
                 output.writelines(expenses_csv_format)
-            case OutputFormat.JSON:
+            case FileFormat.JSON:
                 expenses_dict_format = [expense.to_dict()
                                         for expense in expenses]
                 expenses_json = json.dumps(expenses_dict_format)
                 output.write(expenses_json)
         console.print(
             f"Exported expenses to: [bold yellow]{output.name}[/bold yellow]")
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise typer.Exit(code=1)
+
+
+@app.command(name="import")
+def import_expenses(
+    file: Annotated[str, typer.Option(help="File containing expenses")],
+    _format: Annotated[
+        FileFormat,
+        typer.Option("--format", case_sensitive=False)
+    ] = FileFormat.CSV
+):
+    """Import expenses from a file. Supports CSV and JSON"""
+    imported_count = 0
+    try:
+        match _format:
+            case FileFormat.CSV:
+                expenses = Expense.parse_csv(file)
+                imported_count = len(expenses)
+                DBClient.add_many(expenses)
+            case FileFormat.JSON:
+                pass
+        console.print(
+            f"Imported {imported_count} expenses from: [bold yellow]{file}[/bold yellow]")
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise typer.Exit(code=1)

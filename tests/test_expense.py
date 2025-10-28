@@ -1,8 +1,19 @@
+import os
+
+import pytest
+
 from expense_tracker.models.expense import Expense
+from expense_tracker.models.exceptions import InvalidImportFileError
 from datetime import datetime
 
 
 class TestExpense:
+    IMPORT_FILE = "test_parse_csv.txt"
+
+    def teardown_method(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+
     def test_should_convert_to_dic(self):
         current_date = datetime.now()
         expense = Expense(50.0, "Groceries",
@@ -38,3 +49,56 @@ class TestExpense:
                           date=current_date, category="Food", id=1)
         expense_csv = expense.to_csv()
         assert f"1,50.0,Groceries,Food,{current_date.isoformat()}"
+
+    def test_parse_csv(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+        with open(self.IMPORT_FILE, "x") as file:
+            file.writelines([
+                "amount,description,category,date\n",
+                "33.5,This is a test,Food,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Transport,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Entertainment,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Health,2025-05-12T12:00:00\n",
+            ])
+        expenses = Expense.parse_csv(self.IMPORT_FILE)
+        assert len(expenses) == 4
+        for expense in expenses:
+            assert isinstance(expense, Expense)
+            assert expense.date.isoformat() == "2025-05-12T12:00:00"
+            assert isinstance(expense.amount, float)
+
+    def test_parse_csv_throws_exception_on_invalid_field_type(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+        with open(self.IMPORT_FILE, "x") as file:
+            file.writelines([
+                "amount,description,category,date\n",
+                "et,This is a test,Food,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Transport,2025-05-12T12:00:00\n",
+                "55.r,This is a test,Entertainment,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Health,2025-05-12T12:00:00\n",
+            ])
+        with pytest.raises(InvalidImportFileError) as ex:
+            Expense.parse_csv(self.IMPORT_FILE)
+        assert "Some fields may not be of the right type" in str(ex.value)
+
+    def test_parse_csv_throws_exception_on_malformed_headings(self):
+        if os.path.exists(self.IMPORT_FILE):
+            os.remove(self.IMPORT_FILE)
+        with open(self.IMPORT_FILE, "x") as file:
+            file.writelines([
+                "amount,descrip,category,date\n",
+                "33.5,This is a test,Food,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Transport,2025-05-12T12:00:00\n",
+                "55.3,This is a test,Entertainment,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Health,2025-05-12T12:00:00\n",
+            ])
+        with pytest.raises(InvalidImportFileError) as ex:
+            Expense.parse_csv(self.IMPORT_FILE)
+        assert "Some column headings are malformed" in str(ex.value)
+
+    def test_parse_csv_throws_exception_on_missing_file(self):
+        with pytest.raises(InvalidImportFileError) as ex:
+            Expense.parse_csv(self.IMPORT_FILE)
+        assert "Import file does not exist" in str(ex.value)

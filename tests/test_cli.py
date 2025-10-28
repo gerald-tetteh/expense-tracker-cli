@@ -133,3 +133,23 @@ class TestCli:
             parsed_expenses: list[dict[str, any]] = json.loads(lines[0])
             assert len(parsed_expenses) == 3
         os.remove("export_test.json")
+
+    def test_import_expenses_csv(self):
+        import_file = "import_csv_test.csv"
+        self.runner.invoke(app, ["init"])
+        if os.path.exists(import_file):
+            os.remove(import_file)
+        with open(import_file, "x") as file:
+            file.writelines([
+                "amount,description,category,date\n",
+                "33.5,This is a test,Food,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Transport,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Entertainment,2025-05-12T12:00:00\n",
+                "33.5,This is a test,Health,2025-05-12T12:00:00\n",
+            ])
+        result = self.runner.invoke(
+            app, ["import", "--file", import_file, "--format", "csv"])
+        expenses = DBClient.get_all()
+        assert len(expenses) == 4
+        assert f"Imported 4 expenses from: {import_file}" in result.output
+        os.remove(import_file)
